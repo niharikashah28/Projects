@@ -1,0 +1,436 @@
+---
+title: "Measuring Happiness Based on Dietary Preferences for Students"
+author: "Niharika Shah"
+output:
+  word_document: default
+  pdf_document: default
+  rmdformats::readthedown:   
+    code_folding: hide
+---
+
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+library(MASS)
+library(rmdformats)
+```
+# Introduction & Motivation
+
+The debate on the inadequacies of a vegetarian diet versus hazards of a non-vegetarian diet has raged back and forth for several years, and has now found its way into the lives of young students today. As humans, we are creatures of comfort, habit and stubbornness. The reality is that humans tend to get bored very easily, of their monotonous, sedentary lifestyles, or from consuming an inadequate diet, or from overeating. Up until last year, Emory University had a rather unpleasant reputation on the internet about its food and dining facilities, and several students had voiced their complains about it, especially that they did not offer enough meal options for vegetarians. Emory did relaunch the DUC as the DCT (Dobbs Common Table) with a little more variety, but no official survey had been conducted to compare the health and happiness of students who witnessed this change.
+
+Multiple studies, interviews and focus groups conducted across universities in the US have given varied conclusions on how students feel about university meal plans, based on their omnivorous or non-omnivorous dietary preferences. We know that there are several categories of diet that people fall into such as omnivores, vegetarians, vegans, kosher-meal consumers and many more, but for the sake of this study I limited my diet options to these five. The main purpose of this study was to understand whether meat options (chicken/fish/red-meat) overpower vegetarian food options in an on-campus setting, and if that in turn has an effect on the overall health and happiness of the students.  
+
+![Dining Hall, Emory](/Users/niharikashah/Desktop/Screen Shot 2020-12-01 at 5.05.35 AM.png) 
+
+
+
+## Literature Review
+
+A recent report on Purdue University's campus life said that vegetarians are facing limited meal options in dining halls. Vegetarians complain that most of the times, they only have tofu and not too many healthy vegetarian options. Studies also prove that on average, in the US, meat is consumed more than three times the global average, and in much more quantity than vegetarian food. This proves that the American society is a big consuming society; they believe that bigger is better and value quantity over quality. It is therefore not surprising that many organizations and academic institutions may follow this belief and tend to care less about other cultures' ways of eating. 
+
+Another article highlights the 'American Ideal Dinner' and how it focuses on red and processed meat, thereby normalizing red meat options at university dining spaces and their overcompensation for fresher, more diverse vegetarian options. Being an international student and having suffered a major shift in weight and physical health in my freshman year at Emory, I was interested in learning if other students felt the same way or if they were satisfied with the current dining facilities. I also wanted to understand whether sex played a role in maintaining a particular dietary preference (omnivorous or non-omnivorous) but the same Foodways in Focus article concludes that there is only a 1% difference in the number of women who choose the vegetarian lifestyle and men who do the same. 
+
+With this information, I was motivated to survey Emory University students and find out if students with different dietary needs, have any complaints regarding the meal options at DCT, Cox Hall, and other on-campus dining spots, and if they resort to home cooking due to lack of options or other personal health-related reasons. 
+
+![Balanced Diet](/Users/niharikashah/Desktop/EMORY/Lab220/Final project/Balanced.png) 
+
+## Hypothesis
+
+Are non-omnivorous students at Emory unhappy with the limited meal options, compared to omnivores, and has it played a role in impacting their overall health and happiness levels?
+
+Null Hypothesis (H0) : Omnivores have higher Average Happiness Levels at Emory, than non-Omnivores.
+
+# The Data Set
+
+Data was collected from all ECON 220L Sections. 138 people responded to a series of questionnaires. For this specific study, I considered the respondent’s Happiness, Dietary Preference, Sex and Ethnicity along with the frequency with which they cook on their own and order pre-made food. The data set has been renamed 'Prodata'.
+
+```{r, include=TRUE, echo=TRUE}
+# Loading the data
+rm(list = ls())
+load("/Users/niharikashah/Dropbox/My Mac (Niharikas-MBP)/Desktop/Neha/Job Hunt/Econ220DataF20_ano (1).Rdata")
+Prodata <- data.frame(Econ220DataF20_ano)
+```
+
+## Explanation of Groups
+
+Using the dplyr package and the rename function, I changed the column names as follows:
+q12 - Happiness
+q13 - Diet (for Dietary Preferences)
+q33 - Cook_freq (for how frequently students cook on their own)
+q34 - Pre_made (for how frequently students order pre-made food)
+
+Following this, I cleaned the Dataset to present the table in a neater fashion. 
+
+### Data Cleaning for Cooking Frequency:
+This variable measures students' frequency of cooking on a scale of 0-14 times/week, with 0 implying never, 14 implying twice everyday, and so on. Observations should be numeric between 0 and 21. I am interested in using this variable because it plays an integral role in determining how frequently a student relies on self-cooking as a substitute to on-campus dining facilities, which could reflect on the standards and variety of food offered.
+
+The original question was: How often do you cook during the week? Provide a numerical answer for times during the week.
+
+### Data Cleaning for Diet: 
+Dietary preferences were divided into five discrete categories: Omnivore, Vegetarian, Vegan, Kosher, Other. 
+
+The original question was: What are your dietary preferences? Answer numerically with 1 = Omnivorous, 2 = Vegetarian, 3 = Vegan, 4 = Kosher, 5 = Other
+
+### Data Cleaning for Ethnicity:
+There are several different ethnic groups that students identify with, but for the sake of this project, I have sub-categorized the observations into 6 major groups based on the size of the population that identifies with it and most popular ethnicities followed by the masses. The groups are Asian, American, Hispanic, Middle-Eastern and Other.
+
+The original question was: what ethnicity do you identify as?
+
+```{r, results='hide'}
+
+# Selecting columns
+
+Prodata <- Prodata %>%
+  dplyr::select(q12,q13,q33,q34,Ethnicity,sex)
+
+# Data Cleaning. The background variables are Happiness, Diet, Cooking Frequency, Sex, Ethnicity, Pre-Made Frequency
+
+Prodata <- Prodata %>% # Renaming other columns
+  rename(Happiness = q12, Diet = q13, Cook_freq = q33, Pre_made = q34)
+  
+
+#Cleaning the table Cook_freq
+
+table(Prodata$Cook_freq)
+Prodata$Cook_freq[Prodata$Cook_freq == "14 meals"] <- "14"
+
+Prodata$Cook_freq <- as.numeric(Prodata$Cook_freq)
+table(Prodata$Cook_freq)
+
+#Cleaning the table Diet
+table(Prodata$Diet)
+
+Prodata$Diet[Prodata$Diet == "1"] <- "Omnivore" 
+Prodata$Diet[Prodata$Diet == "Omnivorous"] <- "Omnivore" 
+Prodata$Diet[Prodata$Diet == "2"] <- "Vegetarian"
+Prodata$Diet[Prodata$Diet == "3"] <- "Vegan"
+Prodata$Diet[Prodata$Diet == "4"] <- "Kosher"  
+Prodata$Diet[Prodata$Diet == "5"] <- "Other" 
+
+table(Prodata$Diet)
+
+
+#Cleaning the table Ethnicity
+table(Prodata$Ethnicity)
+
+Prodata$Ethnicity = gsub(".*asian*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*chinese*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Asian-American*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*South Korean*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Asian American*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Pakistani*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*indian*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Indian-American*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*indian (south asian)*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*South-Asian*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Asian/Indian*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Dravidian*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*China*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Asian)*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Asianese*", "Asian", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Indian*", "Asian", Prodata$Ethnicity)
+
+Prodata$Ethnicity = gsub(".*Haitian-American*", "American", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Caucasian*", "American", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*White*", "American", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*white*", "American", Prodata$Ethnicity)
+
+Prodata$Ethnicity = gsub(".*White/Middle Eastern*", "Middle Eastern", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Arab*", "Middle Eastern", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Turkish*", "Middle Eastern", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*American/Middle Eastern*", "Middle Eastern", Prodata$Ethnicity) 
+
+Prodata$Ethnicity = gsub(".*Black/African*", "African", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Black/African American*", "African", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*black*", "African", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*African American*", "African", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Black/ African*", "African", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Black*", "African", Prodata$Ethnicity)
+
+Prodata$Ethnicity = gsub(".*Hispanic/Latino*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Latino*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Latinx*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Hispanic/Latino*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*White-Latin*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Hispanica*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Hispanicx*", "Hispanic", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*White/Latino*", "Hispanic", Prodata$Ethnicity)
+
+Prodata$Ethnicity = gsub(".*Mixed*", "Other", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Greek*", "Other", Prodata$Ethnicity)
+Prodata$Ethnicity = gsub(".*Ashkenazi JewIsh*", "Other", Prodata$Ethnicity)
+
+table(Prodata$Ethnicity)
+```
+
+
+
+```{r, results='hold'}
+
+# Required columns in Prodata are: 
+
+Diet <- Prodata$Diet
+Happiness<- Prodata$Happiness
+Cook_freq <- Prodata$Cook_freq
+Ethnicity <- Prodata$Ethnicity
+sex <- Prodata$sex
+Pre_made <- Prodata$Pre_made
+
+```
+
+
+# Data Visualization
+
+## Understanding Dietary Preferences 
+
+The following tables quantify the number of students that belong to each diet category, and what their sex and ethnicity is.
+
+```{r}
+# Table of Dietary Preferences by no. of students
+(t1 <- table(Prodata$Diet)) #table
+(table1 <- prop.table(t1)) #proportion table
+
+
+kable(t1, digits=3, caption="Students by Dietary Preferences", col.names = c("Dietary Preference","No. of Students")) %>%  kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria") #kable
+
+# Table of Dietary Preferences by Sex
+
+contstab <- table(Prodata$sex, Prodata$Diet) #contingency table
+kable(contstab, digits=3, caption = "Sex and Diet") %>%
+  kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria")
+
+# Table of Dietary Preferences by Ethnicity
+
+contstab2 <- table(Prodata$Diet, Prodata$Ethnicity) #contingency table
+kable(contstab2, digits=3, caption = "Ethnicity and Diet") %>%
+  kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria")
+
+```
+The graph below will analyze whether these dietary preferences have any relationship with their average overall happiness levels at Emory so far. 
+
+## Measuring Happiness  
+
+### Scatterplot: Diet, Happiness, Sex
+Scatterplot 1 below has grouped the sample population by sex, into Female and Male, and calculated the average happiness level of each based on Dietary Preferences. 
+
+Vegan Females are at the medium happiness level (level 3). Omnivorous females have a range of different happiness levels (some are satisfied, some are not) and vegetarians are more on the happier end of the spectrum, which is surprising as it means that they have no complaints against their standard of life at Emory with respect to food. 
+
+Omnivorous males behave the same way as females, which speaks of the abundance of omnivorous food offered on campus that results in varying opinions of students. Males of all other diets are neutral-to-happy; nobody is displeased at university.  These results are almost symmetrical.
+
+```{r}
+# Scatterplot 1 for Diet, Happiness and Sex
+
+ constab2 <- table(Prodata$Diet, Prodata$Happiness)
+Prodata %>% 
+  group_by(sex, Diet) %>%
+summarise("AvgHappiness" = mean(Happiness), .groups='keep')
+
+ggplot(Prodata, mapping=aes(x=Diet,y=Happiness,color=sex)) +
+  geom_point(alpha=0.5) +
+  facet_grid (~sex)
+
+
+# Average Happiness Levels by Dietary Preferences
+Prodata %>%
+  group_by(Diet) %>% 
+  summarise(AvgHappiness = mean(Happiness), .groups='keep')
+
+```
+
+### Column Plot: Diet vs. Happiness 
+
+This column plot below combines male and female numbers and measures Dietary Preference against Average Happiness. It makes an interesting observation. Kosher meal consumers are the least happiest, which bears testimony to the fact that there aren't enough kosher meal options available on campus, due to their small size of consumers. Students that belong to the 'Other' category, are the happiest. Numbers could be misleading as there is a very small number of people who belong to the other category. The most interesting observation from this graph is that Vegetarians and Omnivores have very similar Average Happiness Levels, which could possibly reject the null hypothesis made at the very beginning of this project.  
+
+```{r}
+# Column Plot
+  
+  Prodata %>% 
+  group_by(sex, Diet) %>%
+summarise("AvgHappiness" = mean(Happiness), .groups='keep') %>%
+
+  ggplot(Prodata, mapping=aes(x=Diet, y=AvgHappiness, label=round(AvgHappiness, 1))) +
+  geom_col(fill="pink") +
+  ylab("Avg Happiness Level") + xlab("Dietary Preference") +
+  ggtitle("Happiness Levels based on Dietary Preference") +   
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+
+```
+### Violin Plot: Sex vs. Happiness
+
+Using Violin plots, I was able to show where the data is most concentrated, or where it has the highest density. For example, the following plot shows that both males and females have a similar levels of average happiness, proving that sex and gender identification, on average, play no role in determining happiness levels amongst students.
+
+```{r}
+Prodata %>%
+  group_by(sex, Happiness) %>% 
+  summarise(AvgHappiness = mean(Happiness), .groups='keep') %>% 
+
+  ggplot(Prodata, mapping=aes(x=sex, y=AvgHappiness)) + geom_violin(color="maroon", alpha = 0.5) + labs(title = "Sex vs. Happiness Violinplot") + theme_classic() + theme(plot.title=element_text(hjust=0.5))
+```
+
+### Boxplot: Ethnicity vs. Happiness
+
+Using Boxplots, I was able to identify mean Average Happiness of each ethnic group. The Asian, Hispanic, Middle Eastern and Other populations, all have a mean Average Happiness of 3.5 that is higher than that of the African and American ethnic groups.
+
+```{r}
+#Setting the control as sex
+Prodata <- Prodata %>% mutate(control = as.factor(sex))
+
+```
+
+```{r}
+Prodata %>%
+  group_by(Ethnicity, Happiness) %>% 
+  summarise(AvgHappiness = mean(Happiness), .groups='keep') %>% 
+
+  ggplot(Prodata, mapping=aes(x=Ethnicity, y=AvgHappiness)) + geom_boxplot(fill="pink", alpha = 0.5) + labs(title = "Ethnicity vs. Happiness Boxplot") + theme(plot.title=element_text(hjust=0.5))
+```
+
+## Observing Ethnicity
+
+Scatterplot 2 below depicts Diet against Ethnicity and Happiness, and has not taken sex into consideration because the purpose of this graph is to identify if people of certain Ethnicities respond to meal options in a particular way, such that it affects their Happiness levels.
+
+
+```{r}
+# Scatterplot 2 for Ethnicity and Diet
+
+Prodata %>% 
+  group_by(Ethnicity, Diet, Happiness) 
+
+ggplot(Prodata, mapping=aes(x=Diet,y=Happiness, color=Ethnicity)) +
+  geom_point(alpha=0.5) 
+```
+According to this Scatterplot above, Vegan Americans seem rather happy with their life at Emory (Happiness levels 3-4), which is interesting because this again proves that they do not feel that food plays a negative role in their lives. Omnivores, mostly belong to the Asian category, and vary in their happiness levels from 1-5. This could be due to personal tastes and preferences, and behavioral attitudes towards food. Asians in general, seem to be more on the happier end (except for one outlier), and this reflects upon the abundance of asian food options available across campus, at the DCT, Cox Hall, Rollins, etc. Kosher Hispanics, though taking up a small portion of the sample population, are neutral (happiness level 3). It is understood that Kosher meals are not as widespread or available as other options. 
+
+```{r}
+
+  Prodata %>% 
+  group_by(Ethnicity, Pre_made) %>%
+
+
+  ggplot(Prodata, mapping=aes(x=Ethnicity, y=Pre_made)) +
+  geom_col(fill="pink3") +
+  ylab("Pre-Made Food Consumption") + xlab("Ethnicity") +
+  ggtitle("Ethnicity and Pre-Made Food Consumption") +   
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+The above column plot links ethnicity and frequency of consuming pre-made food, which is not supposed to be the healthiest option. Results show that Asians are most active in ordering pre-made food, and it would be interesting to find out what kinds of pre-made food are they purchasing - frozen meals, restaurant-made meals, easy-to-bake meals, etc. This would provide more information on their overall health status.
+
+## Observing Cooking Frequencies of Students
+
+Cooking Frequencies have been numbered in 'times per week'. Using kable to design this beautiful table, I have been able to define how many students cook more frequently in a week, compared to others. For instance, 25 students never cook at home. 19 students cook approximately once a week, 4 students cook almost every day, etc.
+
+
+```{r}
+# Table of Students and their Cooking Frequencies
+(t2 <- table(Prodata$Cook_freq))
+(table2 <- prop.table(t2))
+
+kable(t2, digits=2, caption="Cooking Frequencies", col.names = c("Times per Week","No. of Students")) %>% kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria")
+
+# Column Plot of Cooking Frequency against Happiness Level of Students
+ Prodata$Cook_freq <- as.numeric(Prodata$Cook_freq)
+ 
+Prodata %>%
+  group_by(Cook_freq) %>% 
+  summarise(AvgHappiness = mean(Happiness), .groups='keep') %>% 
+  
+  
+  ggplot(Prodata, mapping=aes(x=Cook_freq, y=AvgHappiness, label=round(AvgHappiness, 3))) +
+  geom_col(fill="pink4") +
+  ylab("Avg Happiness Level") + xlab("Times Cooked Per Week") +
+  ggtitle("Happiness Levels based on Frequency of Cooking at Home") +   
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+The graph above shows the relationship between how happy a student is, and how frequently they cook on their own as a substitute to dining on campus. Students who cook approximately 7 times a week, are the happiest. This means they cook rather frequently, perhaps one of three meals every day. Those who cook the most (more than 16 times a week) have low levels of happiness and one can assume that the added stress and effort of cooking everyday takes a toll on the happiness levels of a student.
+
+
+```{r}
+Prodata$Cook_freq <- as.numeric(Prodata$Cook_freq)
+
+Prodata %>%
+  group_by(sex) %>%    
+  filter(sex != "(Missing)") %>%  
+  ggplot(mapping= aes(x=sex, y=Cook_freq, fill=sex))+
+  geom_violin(color="maroon", alpha=0.5)+  ggtitle("Sex vs. Cooking Frequency Violinplot") + theme_classic ()  +   theme(plot.title=element_text(hjust=0.5),     axis.title.y=element_text(margin=margin(r=10)),            axis.title.x=element_text(margin=margin(t=10)))
+```
+This violin plot graphs a relationship between sex of a student and how often they cook. Traditional beliefs have told us that  females cook more than males, and while this might be true for a small portion of the female violin plot represented by the tip of the graph that extends just beyond 15 times/week, it is obvious that the densest portion of both plots is towards the lower end of cooking frequencies implying that the majority of sample population does not cook (regardless of the sex)
+
+## Analysis of Confidence Intervals and Testing
+
+A T-test is conducted to determine the significance of the difference in means observed for each group being examined. For this study, I have analyzed the 5 categorical groups of Dietary Preferences (Omnivorous, Vegetarian, Vegan, Kosher, Other).
+
+The two T-tests show the relationship between Diet types and Average Happiness, on two groups based on the control (i.e. Sex) e.g. Male Omnivores and Male Vegetarians, and Female Omnivores and Female Vegetarians. 
+
+This confirms whether there is a statistical difference between the mean level of Happiness between the two sets of groups.
+
+The level of significance for this test is an alpha of 0.05.
+
+### Proportion Tables
+
+```{r}
+# Proportion Table based on Sex
+
+kable(prop.table(table(Prodata$control)), digits=3, col.names=c("Sex", "Proportion of Students")) %>%
+ kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria")
+
+# Proportion Table based on Diet
+
+kable(prop.table(table(Prodata$Diet)), digits=3, col.names=c("Diet", "Proportion of Students")) %>%
+  kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria")
+
+Prodata %>% group_by(Diet, control) %>% summarize( AvgHappiness = mean(Happiness)) %>% kable(digits=3) %>%
+ kable_classic(c("striped", "hover"), full_width = F, html_font = "Cambria")
+
+```
+Since Omnivores and Vegetarians have the largest proportions in the table, I have conducted t-tests on these two groups. 
+
+### Happiness by Diet: Omnivore vs Vegetarian (Males)
+
+```{r}
+t.test(Happiness ~ Diet, data = subset(Prodata, (control=="Male" & (Diet=="Omnivore" | Diet=="Vegetarian"))))
+
+```
+From this test, I obtain a p-value of 0.9113 which is > alpha. I also obtain a 95% confidence interval for difference between means (mean Happiness of Omnivore group minus that of Vegetarian group) of -0.6864758 to 0.6213764. Once again, the p-value exceeds alpha and since the confidence interval includes 0, I fail to reject the null hypothesis: my data does not show statistically significant evidence that the mean level of happiness for Omnivore males  differs from the mean level of happiness for Vegetarian males on campus.
+
+### Happiness by Diet: Omnivore vs Vegetarian (Females)
+
+```{r}
+t.test(Happiness ~ Diet, data = subset(Prodata, (control=="Female" & (Diet=="Omnivore" | Diet=="Vegetarian"))))
+```
+
+From this test, I obtain a p-value of 0.5175 which is > alpha. I also obtain a 95% confidence interval for difference between means (mean Happiness of Omnivore group minus mean of Vegetarian group) of -0.9622219 to 0.5061408. Once again, the p-value exceeds alpha and because the confidence interval includes 0, I fail to reject the null hypothesis: my data does not show statistically significant evidence that the mean level of happiness for Omnivore females  differs from the mean level of happiness for Vegetarian females on campus. 
+
+
+# Conclusion
+
+## Based on our findings...
+
+This project set out with the intention of exploring the relationship between Student Diet Types and Happiness with the overall Emory Community, to confirm whether the two were at all related and if Emory meal options played a role in determining the happiness levels of students. 
+
+The two hypotheses leading this investigation were that (1) students who consumed meat (omnivores) had a higher average happiness level than students with other dietary restrictions (2) there was a statistical difference between mean Happiness levels of Omnivores and Vegetarians (the two most common dietary preferences of students). 
+
+The first hypothesis was based on the prior literature discussed, that the Ideal American Dinner comprises red and processed meat and therefore it is expected that most institutions will favor an omnivorous selection of food rather than vegan, vegetarian and kosher options. Additionally, students from other universities have also complained that there are not enough vegetarian options on campus to suit their diet needs.If this were to be true, then non-omnivores should be less satisfied with the Emory Community and show display lower levels of Average Happiness. 
+
+The second hypothesis was guided by a similar idea that there might be a significant statistical difference between the happiness levels of the two groups.
+
+The results of this study, however, rejected both the null hypotheses. There are a variety of factors that could lead into why this is the case. Firstly, the sample selected was limited to Emory University undergraduate students who were enrolled in ECON220L: Probability & Statistics for Economists Lab. We cannot be sure that the rest of the student population feels the same way about dining options and restrictions. The second reason is tied to the first, in that, since we had a tight sample group, the number of omnivores was significantly higher than the number of students with the other 4 dietary preferences. For this reason, the overall raw results would be biased by this huge number of Omnivores. Given a larger sample of the whole student body, there might be more vegans and vegetarians to balance the data out. Third, since our 'Happiness' variable speaks of overall happiness at the University, it is possible that Diet and on-campus meal options do not play a significant role in determining how happy a student is at the university. Other factors such as education, faculty, cleanliness and social circles might be heavier contributors to their happiness levels. The fourth reason (a possibly minor reason) is that since this study was based on a self-report method of data collection, students might have inaccurately documented how often they cook at home or order pre-made food. This could have led to slightly skewed results, though it may not be the prime reason why.
+
+## Further Applications
+
+Despite the two hypotheses lacking support, this project was still valuable in various ways. Firstly, it informed me against my belief that omnivores are more satisfied with life at Emory whereas Vegetarians and Vegans feel more restricted and bound by unhealthy options, adversely affecting their well-being. Looking forward, it would be interesting to explore Happiness level that is specifically connected to food at Emory. Students could respond to surveys about their satisfaction with the new DCT compared to the previous years' DUC and rate their happiness levels, health levels, etc. It would then be a worthy pursuit to use similar variables of Cooking Frequency and Pre_made Frequency to understand if Omnivores are really living a healthier lifestyle than Non-Omnivores.
+
+Studies like these would go a long way in improving the overall standard of living at Emory, and take a dive into the student body's perspectives of the university's upkeep. 
+
+
+# References
+
+Reporter, EMILY PRIMMStaff. “Vegetarian Students Say Dining Court Options Are Limited.” Purdue Exponent, 1 Oct. 2020, www.purdueexponent.org/campus/article_6415cf96-8198-5ec3-83be-0ec6a8facc15.html. 
+
+“Vegetarians on a College Campus.” Foodways in Focus, foodwaysinfocus.leadr.msu.edu/fall-2015/vegetarians-on-a-college-campus/. 
+
+
